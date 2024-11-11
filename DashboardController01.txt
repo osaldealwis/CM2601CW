@@ -1,0 +1,62 @@
+package com.example.demo;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.scene.Node;
+import java.io.IOException;
+
+public class DashboardController {
+
+    // Handle viewing articles
+    @FXML
+    public void handleViewArticles(ActionEvent event) {
+        showAlert("View Articles", "Displaying all articles.");
+        // Load the articles view (to be implemented)
+    }
+
+    // Handle getting recommendations
+    @FXML
+    public void handleGetRecommendations(ActionEvent event) {
+        showAlert("Get Recommendations", "Displaying recommended articles.");
+        // Load recommendations view (to be implemented)
+    }
+
+    // Handle updating profile
+    @FXML
+    public void handleUpdateProfile(ActionEvent event) {
+        showAlert("Update Profile", "Profile update page.");
+        // Load profile update view (to be implemented)
+    }
+
+    // Handle logout
+    @FXML
+    public void handleLogout(ActionEvent event) {
+        showAlert("Logout", "Logging out...");
+
+        // Redirect back to the login screen
+        try {
+            Parent loginRoot = FXMLLoader.load(getClass().getResource("login.fxml"));
+            Scene loginScene = new Scene(loginRoot);
+
+            // Get current stage and set login scene
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.setScene(loginScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Utility method to show alerts
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+}
