@@ -2,8 +2,15 @@ package com.example.demo;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public class AdminDashboardController {
 
@@ -33,7 +40,21 @@ public class AdminDashboardController {
         alert.showAndWait();
     }
 
-    public void handleLogout(ActionEvent actionEvent) {
+    // Handle logout
+    @FXML
+    public void handleLogout(ActionEvent event) {
+        showAlert("Logout", "Logging out...");
 
+        // Redirect back to the login screen
+        try {
+            Parent loginRoot = FXMLLoader.load(getClass().getResource("login.fxml"));
+            Scene loginScene = new Scene(loginRoot);
+
+            // Get current stage and set login scene
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.setScene(loginScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
