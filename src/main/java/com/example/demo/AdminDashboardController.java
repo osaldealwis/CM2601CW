@@ -37,6 +37,7 @@ public class AdminDashboardController {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+
         alert.showAndWait();
     }
 
