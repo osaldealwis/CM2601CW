@@ -1,0 +1,198 @@
+package com.example.demo;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.stage.Stage;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+public class AdminDashboardController {
+
+    @FXML
+    private ComboBox<String> categoryComboBox;
+
+    @FXML
+    private TextField articleTitleField;
+
+    @FXML
+    private TextArea articleContentArea;
+
+    @FXML
+    private javafx.scene.layout.AnchorPane articleAddSection; // Section for adding article
+
+    @FXML
+    private javafx.scene.layout.AnchorPane articleRemoveSection; // Section for removing article
+
+    @FXML
+    private ComboBox<String> articleToRemoveComboBox; // ComboBox for selecting article to remove
+
+    // Add predefined categories
+    private static final String[] CATEGORIES = {"Technology", "Health", "Sports", "AI"};
+
+    // Initialize method to populate category combo box
+    public void initialize() {
+        categoryComboBox.getItems().addAll(CATEGORIES);
+        articleAddSection.setVisible(false);  // Initially hide the Add Article section
+        articleRemoveSection.setVisible(false);  // Initially hide the Remove Article section
+
+        // Populate the ComboBox for removing articles
+        populateArticleRemoveComboBox();
+    }
+
+    // Handle Add Article button click
+    public void handleAddArticle(ActionEvent event) {
+        articleAddSection.setVisible(true); // Show the Add Article section
+        articleRemoveSection.setVisible(false); // Hide the Remove Article section
+    }
+
+    // Handle Remove Article button click
+    public void handleRemoveArticle(ActionEvent event) {
+        articleAddSection.setVisible(false); // Hide the Add Article section
+        articleRemoveSection.setVisible(true); // Show the Remove Article section
+    }
+
+    // Handle the actual adding of the article
+    public void handleSubmitArticle(ActionEvent event) {
+        String category = categoryComboBox.getValue();
+        String title = articleTitleField.getText();
+        String content = articleContentArea.getText();
+
+        if (category == null || title.isEmpty() || content.isEmpty()) {
+            showAlert("Error", "Please select a category, and fill in both title and content.");
+            return;
+        }
+
+        saveArticleToFile(title, category, content);
+        showAlert("Success", "Article '" + title + "' added successfully under '" + category + "' category!");
+    }
+
+    // Method to save the article to a file under the selected category
+    private void saveArticleToFile(String title, String category, String content) {
+        String filename = "data/Articles_" + category + ".txt";
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filename, true))) {
+            writer.println("Title: " + title);
+            writer.println("Content: " + content);
+            writer.println("=====================================");
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Failed to save the article.");
+        }
+    }
+
+    // Method to populate the article removal ComboBox with existing articles
+    private void populateArticleRemoveComboBox() {
+        File folder = new File("data");
+        File[] listOfFiles = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
+        List<String> articleTitles = new ArrayList<>();
+
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line;
+                    String title = null;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("Title:")) {
+                            title = line.substring(7).trim(); // Extract the title
+                            articleTitles.add(title);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        articleToRemoveComboBox.getItems().setAll(articleTitles);
+    }
+
+    // Handle the actual removal of the article
+    public void handleRemoveArticleSubmit(ActionEvent event) {
+        String articleToRemove = articleToRemoveComboBox.getValue();
+
+        if (articleToRemove == null || articleToRemove.isEmpty()) {
+            showAlert("Error", "Please select an article to remove.");
+            return;
+        }
+
+        removeArticleFromFile(articleToRemove);
+        showAlert("Success", "Article '" + articleToRemove + "' removed successfully!");
+    }
+
+    // Method to remove the article from the file
+    private void removeArticleFromFile(String articleTitle) {
+        File folder = new File("data");
+        File[] listOfFiles = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
+
+        for (File file : listOfFiles) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                List<String> lines = new ArrayList<>();
+                boolean articleFound = false;
+
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("Title:") && line.substring(7).trim().equals(articleTitle)) {
+                        articleFound = true;
+                    } else if (articleFound && line.startsWith("=====================================")) {
+                        articleFound = false;
+                    }
+
+                    if (!articleFound) {
+                        lines.add(line);
+                    }
+                }
+
+                if (articleFound) {
+                    try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                        for (String lineToWrite : lines) {
+                            writer.println(lineToWrite);
+                        }
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Re-populate the ComboBox after removing the article
+        populateArticleRemoveComboBox();
+    }
+
+    // Show alerts
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    // Handle logout
+    @FXML
+    public void handleLogout(ActionEvent event) {
+        showAlert("Logout", "Logging out...");
+        try {
+            Parent loginRoot = FXMLLoader.load(getClass().getResource("login.fxml"));
+            Scene loginScene = new Scene(loginRoot);
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.setScene(loginScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
