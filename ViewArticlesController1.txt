@@ -1,0 +1,68 @@
+package com.example.demo;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextArea;
+import javafx.stage.Stage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class ViewArticlesController {
+
+    @FXML
+    private ComboBox<String> categoryComboBox;
+
+    @FXML
+    private TextArea articlesDisplayArea;
+
+    // Define categories (same as in AdminDashboardController)
+    private static final String[] CATEGORIES = {"Technology", "Health", "Sports", "AI"};
+
+    public void initialize() {
+        categoryComboBox.getItems().addAll(CATEGORIES);
+    }
+
+    // Handle loading and displaying articles when a category is selected
+    @FXML
+    public void handleCategorySelection() {
+        String selectedCategory = categoryComboBox.getValue();
+        if (selectedCategory != null) {
+            displayArticles(selectedCategory);
+        } else {
+            showAlert("Error", "Please select a category.");
+        }
+    }
+
+    // Display articles in the selected category
+    private void displayArticles(String category) {
+        articlesDisplayArea.clear();
+        String filename = "data/Articles_" + category + ".txt";
+        File file = new File(filename);
+
+        if (!file.exists()) {
+            articlesDisplayArea.setText("No articles available in this category.");
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                articlesDisplayArea.appendText(line + "\n");
+            }
+        } catch (IOException e) {
+            showAlert("Error", "Failed to load articles.");
+        }
+    }
+
+    // Show alerts
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+}
