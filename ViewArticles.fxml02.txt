@@ -1,0 +1,14 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<?import javafx.scene.control.ComboBox?>-->
+<!--<?import javafx.scene.layout.VBox?>-->
+<!--<?import javafx.scene.control.ScrollPane?>-->
+
+<!--<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.demo.ViewArticlesController" spacing="10" alignment="TOP_CENTER" prefWidth="600" prefHeight="400">-->
+<!--    &lt;!&ndash; Search Bar &ndash;&gt;-->
+<!--    <ComboBox fx:id="searchBar" onAction="#handleSearch" promptText="Search articles..." />-->
+
+<!--    &lt;!&ndash; ScrollPane to make the article list scrollable &ndash;&gt;-->
+<!--    <ScrollPane>-->
+<!--        <VBox fx:id="articlesVBox" spacing="10" />-->
+<!--    </ScrollPane>-->
+<!--</VBox>-->
