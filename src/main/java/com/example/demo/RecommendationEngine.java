@@ -162,9 +162,11 @@ public class RecommendationEngine {
             scores.put(candidate, similarity);
         }
 
+        // Sort by similarity, limit to top 5
         return scores.entrySet().stream()
                 .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue())) // Sort by similarity
                 .map(Map.Entry::getKey)
+                .limit(5) // Limit to top 5
                 .collect(Collectors.toList());
     }
 
