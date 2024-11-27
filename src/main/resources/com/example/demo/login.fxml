@@ -12,12 +12,18 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label text="Username:"/>
-    <TextField fx:id="usernameField" GridPane.columnIndex="1"/>
+    <!-- Heading -->
+    <Label text="Read News!" style="-fx-font-size: 24px; -fx-font-weight: bold;" GridPane.columnSpan="2" GridPane.rowIndex="0"/>
 
-    <Label text="Password:" GridPane.rowIndex="1"/>
-    <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    <!-- Subheading -->
+    <Label text="Please enter your username and password to continue" style="-fx-font-size: 14px;" GridPane.columnSpan="2" GridPane.rowIndex="1"/>
 
-    <Button text="Login" onAction="#handleLogin" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-    <Button text="Register" onAction="#handleRegister" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    <Label text="Username:" GridPane.rowIndex="2"/>
+    <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+    <Label text="Password:" GridPane.rowIndex="3"/>
+    <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+    <Button text="Login" onAction="#handleLogin" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+    <Button text="Register" onAction="#handleRegister" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
 </GridPane>
