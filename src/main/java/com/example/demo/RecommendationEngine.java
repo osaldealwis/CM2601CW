@@ -9,14 +9,27 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
 public class RecommendationEngine {
 
     private static final String DATA_FOLDER = "data";
     private Map<String, String> allArticles = new HashMap<>(); // Stores article title -> content
     private Map<String, Integer> globalVocabulary = new HashMap<>(); // Global vocabulary for consistent vectorization
+    private String loggedInUser; // To track the user
+
+    public void setUsername(String username) {
+        this.loggedInUser = username;
+    }
 
     // Get recommendations for a user based on preferences
     public List<String> getRecommendationsForUser(String username) {
+        setUsername(username); // Set the logged-in user
         loadAllArticles(); // Load all articles from files
         buildGlobalVocabulary(allArticles.values()); // Build global vocabulary
 
@@ -41,6 +54,113 @@ public class RecommendationEngine {
 
         // Calculate similarities
         return calculateSimilarities(candidateArticles, categoryPreferences.get(preferredCategory));
+    }
+
+    // Open an article in a separate window
+    public void openArticleWindow(String title) {
+        Stage newStage = new Stage();
+        VBox vbox = new VBox();
+        TextArea articleContentArea = new TextArea();
+        articleContentArea.setEditable(false);
+        articleContentArea.setWrapText(true);
+
+        // Find article content by title
+        String articleContent = allArticles.getOrDefault(title, "Article content not found.");
+        articleContentArea.setText(articleContent);
+
+        // Log the article view
+        saveArticleView(title);
+
+        // Like Button
+        Button likeButton = new Button("Like Article 👍");
+        likeButton.setOnAction(event -> savePreference(title, "like"));
+
+        // Dislike Button
+        Button dislikeButton = new Button("Dislike Article 👎");
+        dislikeButton.setOnAction(event -> savePreference(title, "dislike"));
+
+        vbox.getChildren().addAll(articleContentArea, likeButton, dislikeButton);
+        Scene scene = new Scene(vbox, 500, 400);
+        newStage.setScene(scene);
+        newStage.setTitle(title);
+        newStage.show();
+    }
+
+    private void saveArticleView(String articleTitle) {
+        if (loggedInUser == null || loggedInUser.isEmpty()) {
+            showAlert("Error", "User is not logged in. Unable to save article view.");
+            return;
+        }
+
+        String fileName = DATA_FOLDER + "/preferences_" + loggedInUser + ".csv";
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+            // Write header if file is new
+            File file = new File(fileName);
+            if (file.length() == 0) {
+                writer.write("Title,Action,Preference\n");
+            }
+
+            // Write the article view entry with "NA" for the preference, followed by a new line
+            writer.write(String.format("\"%s\",viewed,NA\n", articleTitle));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void savePreference(String articleTitle, String preference) {
+        if (loggedInUser == null || loggedInUser.isEmpty()) {
+            showAlert("Error", "User is not logged in. Unable to save preference.");
+            return;
+        }
+
+        String fileName = DATA_FOLDER + "/preferences_" + loggedInUser + ".csv";
+        try {
+            File tempFile = new File(fileName + ".tmp");
+            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile, false)); // 'false' to overwrite the temp file
+            String line;
+            boolean updated = false;
+
+            // Read all lines and update the preference
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(articleTitle) && line.contains("viewed")) {
+                    // If the article is already viewed, update its preference
+                    line = String.format("\"%s\",viewed,%s", articleTitle, preference);
+                    updated = true;
+                }
+
+                // Avoid writing empty lines
+                if (!line.trim().isEmpty()) {
+                    writer.write(line + "\n");
+                }
+            }
+
+            // If the article was not found, add a new entry
+            if (!updated) {
+                writer.write(String.format("\"%s\",viewed,%s\n", articleTitle, preference));
+            }
+
+            reader.close();
+            writer.close();
+
+            // Delete original file and rename the temp file to the original
+            if (new File(fileName).delete()) {
+                tempFile.renameTo(new File(fileName));
+            }
+
+            showAlert("Success", "Your preference for the article has been recorded.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Unable to save your preference.");
+        }
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     // Analyze user preferences from the CSV file
