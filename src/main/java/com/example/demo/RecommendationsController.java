@@ -23,6 +23,7 @@ public class RecommendationsController {
         }
 
         RecommendationEngine recommendationEngine = new RecommendationEngine();
+        recommendationEngine.setUsername(loggedInUser); // Set the username for the engine
         List<String> recommendedArticles = recommendationEngine.getRecommendationsForUser(loggedInUser);
 
         recommendationsVBox.getChildren().clear();
@@ -32,14 +33,10 @@ public class RecommendationsController {
         } else {
             for (String articleTitle : recommendedArticles) {
                 Button articleButton = new Button(articleTitle);
-                articleButton.setOnAction(event -> openArticle(articleTitle));
+                articleButton.setOnAction(event -> recommendationEngine.openArticleWindow(articleTitle)); // Link to openArticleWindow
                 recommendationsVBox.getChildren().add(articleButton);
             }
         }
-    }
-
-    private void openArticle(String articleTitle) {
-        System.out.println("Opening article: " + articleTitle);
     }
 
     @FXML

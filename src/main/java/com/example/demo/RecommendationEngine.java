@@ -52,6 +52,12 @@ public class RecommendationEngine {
         // Fetch articles from the preferred category
         List<String> candidateArticles = fetchArticlesFromCategory(preferredCategory, categoryPreferences.get(preferredCategory));
 
+        // Skip disliked articles
+        List<String> dislikedArticles = getDislikedArticles(username);
+        candidateArticles = candidateArticles.stream()
+                .filter(article -> !dislikedArticles.contains(article))
+                .collect(Collectors.toList());
+
         // Calculate similarities
         return calculateSimilarities(candidateArticles, categoryPreferences.get(preferredCategory));
     }
@@ -231,6 +237,27 @@ public class RecommendationEngine {
         return recommendations;
     }
 
+    // Get disliked articles for the logged-in user
+    private List<String> getDislikedArticles(String username) {
+        List<String> dislikedArticles = new ArrayList<>();
+        String preferencesFilePath = DATA_FOLDER + "/preferences_" + username + ".csv";
+
+        try (CSVReader reader = new CSVReader(new FileReader(preferencesFilePath))) {
+            List<String[]> records = reader.readAll();
+
+            for (String[] record : records) {
+                if (record[0].equalsIgnoreCase("Title")) continue; // Skip header
+                if ("dislike".equalsIgnoreCase(record[2])) {
+                    dislikedArticles.add(record[0]);
+                }
+            }
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
+        }
+
+        return dislikedArticles;
+    }
+
     // Build a global vocabulary from all articles
     private void buildGlobalVocabulary(Collection<String> articles) {
         int index = 0;
@@ -319,4 +346,6 @@ public class RecommendationEngine {
             }
         }
     }
+
 }
+
