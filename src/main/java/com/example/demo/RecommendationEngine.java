@@ -1,9 +1,9 @@
 package com.example.demo;
 
-import opennlp.tools.postag.POSModel;
-import opennlp.tools.postag.POSTaggerME;
-import opennlp.tools.doccat.DoccatModel;
-import opennlp.tools.doccat.DocumentCategorizerME;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
 
 import java.io.*;
 import java.util.*;
@@ -12,90 +12,63 @@ import java.util.stream.Collectors;
 public class RecommendationEngine {
 
     private static final String DATA_FOLDER = "data";
-    private static final String POS_MODEL_PATH = "models/opennlp-en-ud-ewt-pos-1.1-2.4.0.bin";
-    private static final String DOC_CAT_MODEL_PATH = "models/en-doccat.bin";
+    private Map<String, String> allArticles = new HashMap<>(); // Stores article title -> content
+    private Map<String, Integer> globalVocabulary = new HashMap<>(); // Global vocabulary for consistent vectorization
 
-    private POSTaggerME posTagger;
-
-    public RecommendationEngine() {
-        try {
-            // Load the POS model
-            InputStream posModelIn = getClass().getClassLoader().getResourceAsStream(POS_MODEL_PATH);
-            if (posModelIn == null) {
-                throw new IOException("POS model not found in resources.");
-            }
-            POSModel posModel = new POSModel(posModelIn);
-            posTagger = new POSTaggerME(posModel);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Main method to get recommendations for a user
+    // Get recommendations for a user based on preferences
     public List<String> getRecommendationsForUser(String username) {
-        String preferencesFilePath = DATA_FOLDER + "/preferences_" + username + ".csv";
-        Map<String, String> userPreferences = loadUserPreferences(preferencesFilePath);
+        loadAllArticles(); // Load all articles from files
+        buildGlobalVocabulary(allArticles.values()); // Build global vocabulary
 
-        if (userPreferences.isEmpty()) {
+        String preferencesFilePath = DATA_FOLDER + "/preferences_" + username + ".csv";
+
+        // Load user preferences
+        Map<String, List<String>> categoryPreferences = analyzeUserPreferences(preferencesFilePath);
+
+        // Find the category with the highest "liked" and "viewed" counts
+        String preferredCategory = categoryPreferences.entrySet().stream()
+                .max(Comparator.comparingInt(entry -> entry.getValue().size()))
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        if (preferredCategory == null) {
             System.out.println("No preferences found for user: " + username);
             return Collections.emptyList();
         }
 
-        // Get liked articles, giving priority to those that were added last
-        List<String> likedArticles = getArticlesByPreference(userPreferences, "like");
+        // Fetch articles from the preferred category
+        List<String> candidateArticles = fetchArticlesFromCategory(preferredCategory, categoryPreferences.get(preferredCategory));
 
-        if (likedArticles.isEmpty()) {
-            // If no liked articles, consider viewed ones
-            likedArticles = getArticlesByPreference(userPreferences, "viewed");
-        }
-
-        if (likedArticles.isEmpty()) {
-            System.out.println("No liked or viewed articles found for user: " + username);
-            return Collections.emptyList();
-        }
-
-        // Determine categories of liked/viewed articles
-        Set<String> preferredCategories = getArticleCategories(likedArticles);
-
-        // Fetch articles from those categories, prioritizing new ones based on the latest preferences
-        List<String> recommendedArticles = fetchArticlesByCategories(preferredCategories, likedArticles);
-
-        return recommendedArticles;
+        // Calculate similarities
+        return calculateSimilarities(candidateArticles, categoryPreferences.get(preferredCategory));
     }
 
-    // Load user preferences (liked, viewed, etc.) from the CSV file
-    private Map<String, String> loadUserPreferences(String filePath) {
-        Map<String, String> preferences = new LinkedHashMap<>(); // LinkedHashMap preserves order
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.startsWith("Title")) { // Skip header
-                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-                    if (parts.length >= 3) {
-                        String title = parts[0].replaceAll("^\"|\"$", ""); // Remove quotes
-                        String preference = parts[2].trim().toLowerCase();
-                        preferences.put(title, preference);
-                    }
+    // Analyze user preferences from the CSV file
+    private Map<String, List<String>> analyzeUserPreferences(String filePath) {
+        Map<String, List<String>> categoryPreferences = new HashMap<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+
+            for (String[] record : records) {
+                if (record[0].equalsIgnoreCase("Title")) continue; // Skip header
+                String title = record[0];
+                String action = record[1];
+                String preference = record[2];
+
+                if (preference.equalsIgnoreCase("like") || action.equalsIgnoreCase("viewed")) {
+                    String category = detectArticleCategory(title);
+                    categoryPreferences.computeIfAbsent(category, k -> new ArrayList<>()).add(title);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | CsvException e) {
             e.printStackTrace();
         }
-        return preferences;
+        return categoryPreferences;
     }
 
-    // Get articles based on the given preference (like or viewed), with priority for newer entries
-    private List<String> getArticlesByPreference(Map<String, String> userPreferences, String preferenceType) {
-        // Filter articles based on the preference type ("like" or "viewed")
-        return userPreferences.entrySet().stream()
-                .filter(entry -> preferenceType.equalsIgnoreCase(entry.getValue()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-    }
-
-    // Get categories of the articles based on titles using NLP
-    private Set<String> getArticleCategories(List<String> articleTitles) {
-        Set<String> categories = new HashSet<>();
+    // Detect category based on article title
+    private String detectArticleCategory(String title) {
+        // Match article titles to category files
         File folder = new File(DATA_FOLDER);
         File[] files = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
 
@@ -103,16 +76,9 @@ public class RecommendationEngine {
             for (File file : files) {
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
-                    String currentCategory = file.getName().replace("Articles_", "").replace(".txt", "");
                     while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("Title:")) {
-                            String title = line.substring(7).trim();
-                            if (articleTitles.contains(title)) {
-                                // Use NLP to categorize the article based on its content
-                                String articleContent = getArticleContent(file, title); // Assuming article content is in the file
-                                String articleCategory = categorizeArticleWithNLP(articleContent);
-                                categories.add(articleCategory);
-                            }
+                        if (line.startsWith("Title:") && line.substring(7).trim().equalsIgnoreCase(title)) {
+                            return file.getName().replace("Articles_", "").replace(".txt", "");
                         }
                     }
                 } catch (IOException e) {
@@ -120,85 +86,115 @@ public class RecommendationEngine {
                 }
             }
         }
-
-        return categories;
+        return "Unknown";
     }
 
-    // Fetch articles based on the categories and exclude already viewed/liked articles
-    private List<String> fetchArticlesByCategories(Set<String> categories, List<String> excludeTitles) {
+    // Fetch articles from a specific category excluding already interacted titles
+    private List<String> fetchArticlesFromCategory(String category, List<String> excludeTitles) {
         List<String> recommendations = new ArrayList<>();
-        File folder = new File(DATA_FOLDER);
-        File[] files = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
+        String categoryFilePath = DATA_FOLDER + "/Articles_" + category + ".txt";
 
-        if (files != null) {
-            for (File file : files) {
-                String currentCategory = file.getName().replace("Articles_", "").replace(".txt", "");
-                if (categories.contains(currentCategory)) {
-                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            if (line.startsWith("Title:")) {
-                                String title = line.substring(7).trim();
-                                // Avoid recommending the same article again
-                                if (!excludeTitles.contains(title) && !recommendations.contains(title)) {
-                                    recommendations.add(title);
-                                }
-                            }
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+        try (BufferedReader reader = new BufferedReader(new FileReader(categoryFilePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("Title:")) {
+                    String title = line.substring(7).trim();
+                    if (!excludeTitles.contains(title)) {
+                        recommendations.add(title);
                     }
                 }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return recommendations;
     }
 
-    // Method to categorize article content using OpenNLP
-    private String categorizeArticleWithNLP(String articleContent) {
-        try (InputStream modelIn = getClass().getClassLoader().getResourceAsStream(DOC_CAT_MODEL_PATH)) {
-            // Load the pre-trained model
-            if (modelIn == null) {
-                throw new IOException("Document categorization model not found in resources.");
+    // Build a global vocabulary from all articles
+    private void buildGlobalVocabulary(Collection<String> articles) {
+        int index = 0;
+        for (String article : articles) {
+            String[] words = article.split("\\s+");
+            for (String word : words) {
+                if (!globalVocabulary.containsKey(word)) {
+                    globalVocabulary.put(word, index++);
+                }
             }
-            DoccatModel model = new DoccatModel(modelIn);
-            DocumentCategorizerME categorizer = new DocumentCategorizerME(model);
-
-            // Manually tokenize the article content (split by whitespace)
-            String[] tokens = articleContent.split("\\s+");
-
-            // Apply POS tagging (even though the tokenizer is not used)
-            String[] posTags = posTagger.tag(tokens);
-
-            // Classify the article content
-            double[] outcome = categorizer.categorize(tokens);
-            String category = categorizer.getBestCategory(outcome);
-            return category;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "Unknown"; // Return a default category if an error occurs
         }
     }
 
-    // Helper method to get the article content from a file
-    private String getArticleContent(File file, String title) {
-        StringBuilder content = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            boolean isTitleFound = false;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("Title:") && line.substring(7).trim().equals(title)) {
-                    isTitleFound = true;
-                }
-                if (isTitleFound) {
-                    content.append(line).append("\n");
+    // Convert article content into a vector using the global vocabulary
+    private RealVector toVector(String content) {
+        String[] words = content.split("\\s+");
+        double[] vector = new double[globalVocabulary.size()];
+        for (String word : words) {
+            if (globalVocabulary.containsKey(word)) {
+                int index = globalVocabulary.get(word);
+                vector[index]++;
+            }
+        }
+        return new ArrayRealVector(vector);
+    }
+
+    // Calculate cosine similarity between articles
+    private double calculateCosineSimilarity(RealVector vector1, RealVector vector2) {
+        return vector1.dotProduct(vector2) / (vector1.getNorm() * vector2.getNorm());
+    }
+
+    // Calculate similarities and rank articles
+    private List<String> calculateSimilarities(List<String> candidateArticles, List<String> userLikedArticles) {
+        List<String> recommendations = new ArrayList<>();
+        RealVector userProfileVector = new ArrayRealVector(globalVocabulary.size());
+
+        // Aggregate vectors for user liked articles
+        for (String likedArticle : userLikedArticles) {
+            String content = allArticles.getOrDefault(likedArticle, "");
+            userProfileVector = userProfileVector.add(toVector(content));
+        }
+
+        // Rank candidates based on similarity
+        Map<String, Double> scores = new HashMap<>();
+        for (String candidate : candidateArticles) {
+            String content = allArticles.getOrDefault(candidate, "");
+            RealVector candidateVector = toVector(content);
+            double similarity = calculateCosineSimilarity(userProfileVector, candidateVector);
+            scores.put(candidate, similarity);
+        }
+
+        return scores.entrySet().stream()
+                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue())) // Sort by similarity
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    // Load all articles into memory
+    private void loadAllArticles() {
+        File folder = new File(DATA_FOLDER);
+        File[] files = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
+
+        if (files != null) {
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line, title = null, content = "";
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("Title:")) {
+                            if (title != null) {
+                                allArticles.put(title, content.trim());
+                            }
+                            title = line.substring(7).trim();
+                            content = "";
+                        } else {
+                            content += line + " ";
+                        }
+                    }
+                    if (title != null) {
+                        allArticles.put(title, content.trim());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return content.toString();
     }
 }
-
