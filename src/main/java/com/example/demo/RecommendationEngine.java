@@ -4,11 +4,9 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
-
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;

@@ -8,7 +8,7 @@ public class FileManager {
 
     public static void saveCredentials(String username, String password) {
         try {
-            // Create the "data" folder if it doesn't exist
+            // Create the "data" folder
             File directory = new File("data");
             if (!directory.exists()) {
                 directory.mkdir();  // Create the folder

@@ -2,7 +2,6 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Button?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.demo.ViewArticlesController" spacing="10" alignment="TOP_CENTER" prefWidth="600" prefHeight="400">
     <!-- Search Bar -->

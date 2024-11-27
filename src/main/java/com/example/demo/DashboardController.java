@@ -78,7 +78,6 @@ public class DashboardController {
     }
 
 
-
     // Handle updating profile
     @FXML
     public void handleUpdateProfile(ActionEvent event) {

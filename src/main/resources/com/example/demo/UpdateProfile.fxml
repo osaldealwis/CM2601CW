@@ -6,12 +6,12 @@
       fx:controller="com.example.demo.UpdateProfileController">
     <Label text="Update Profile" style="-fx-font-size: 18px;"/>
 
-    <!-- Instruction for changing username -->
+    <!-- For changing username -->
     <Label text="To change the username:"/>
     <TextField fx:id="currentUsernameField" promptText="Current Username"/>
     <TextField fx:id="newUsernameField" promptText="New Username (Optional)"/>
 
-    <!-- Instruction for changing password -->
+    <!-- For changing password -->
     <Label text="To change the password:"/>
     <PasswordField fx:id="newPasswordField" promptText="New Password"/>
     <PasswordField fx:id="confirmPasswordField" promptText="Confirm New Password"/>

@@ -20,8 +20,6 @@ import java.io.*;
 
 public class ViewArticlesController {
 
-
-
     private String loggedInUser;
 
     public void setUsername(String username) {
@@ -186,8 +184,6 @@ public class ViewArticlesController {
             showAlert("Error", "Unable to save your preference.");
         }
     }
-
-
 
 
     // Load article content from file based on title

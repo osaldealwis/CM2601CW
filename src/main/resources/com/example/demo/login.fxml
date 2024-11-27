@@ -12,18 +12,19 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <!-- Heading -->
     <Label text="Read News!" style="-fx-font-size: 24px; -fx-font-weight: bold;" GridPane.columnSpan="2" GridPane.rowIndex="0"/>
 
-    <!-- Subheading -->
     <Label text="Please enter your username and password to continue" style="-fx-font-size: 14px;" GridPane.columnSpan="2" GridPane.rowIndex="1"/>
 
+    <!-- Username field -->
     <Label text="Username:" GridPane.rowIndex="2"/>
     <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
+    <!-- Password field -->
     <Label text="Password:" GridPane.rowIndex="3"/>
     <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
+    <!-- Buttons -->
     <Button text="Login" onAction="#handleLogin" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
     <Button text="Register" onAction="#handleRegister" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
 </GridPane>
