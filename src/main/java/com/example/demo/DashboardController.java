@@ -10,23 +10,74 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.Node;
 
+import java.io.File;
 import java.io.IOException;
 
 public class DashboardController {
 
+    private String loggedInUser;
+
+    public void setUsername(String username) {
+        this.loggedInUser = username;
+    }
+
+
     // Handle viewing articles
     @FXML
     public void handleViewArticles(ActionEvent event) {
-        showAlert("View Articles", "Displaying all articles.");
-        // Load the articles view (to be implemented)
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ViewArticles.fxml"));
+            Parent root = loader.load();
+
+            // Set the username in ViewArticlesController
+            ViewArticlesController controller = loader.getController();
+            controller.setUsername(loggedInUser);
+
+            Stage viewArticlesStage = new Stage();
+            viewArticlesStage.setTitle("View Articles");
+            viewArticlesStage.setScene(new Scene(root));
+            viewArticlesStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 
     // Handle getting recommendations
     @FXML
     public void handleGetRecommendations(ActionEvent event) {
-        showAlert("Get Recommendations", "Displaying recommended articles.");
-        // Load recommendations view (to be implemented)
+        // Define the path for the user's preference file
+        String preferenceFilePath = "data/preferences_" + loggedInUser + ".csv";
+        File preferenceFile = new File(preferenceFilePath);
+
+        // Check if the preference file does not exist
+        if (!preferenceFile.exists()) {
+            // Show an alert prompting the user to view or rate articles
+            showAlert("No Recommendations",
+                    "Please view or rate articles to get personalized recommendations.");
+            return; // Exit the method if no preference file exists
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Recommendations.fxml"));
+            Parent root = loader.load();
+
+            // Set the username in RecommendationsController
+            RecommendationsController recommendationsController = loader.getController();
+            recommendationsController.setUsername(loggedInUser);
+            recommendationsController.loadRecommendations(); // Load recommendations for the logged-in user
+
+            Stage recommendationsStage = new Stage();
+            recommendationsStage.setTitle("Recommended Articles");
+            recommendationsStage.setScene(new Scene(root));
+            recommendationsStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Unable to load recommendations view.");
+        }
     }
+
+
 
     // Handle updating profile
     @FXML
@@ -82,4 +133,3 @@ public class DashboardController {
         alert.showAndWait();
     }
 }
-

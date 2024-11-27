@@ -26,6 +26,15 @@
             <version>17.0.6</version>
         </dependency>
 
+
+            <dependency>
+                <groupId>ai.idylnlp</groupId>
+                <artifactId>idylnlp-opennlp-tools-1.8.3</artifactId>
+                <version>1.1.0</version>
+            </dependency>
+
+
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

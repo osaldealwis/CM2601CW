@@ -29,24 +29,20 @@ public class LoginController {
 
     // Handle login logic
     public void handleLogin(ActionEvent event) {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
+
+        // Check for empty fields
+        if (username.isEmpty() || password.isEmpty()) {
+            showAlert("Login Failed", "Username and password cannot be empty.");
+            return;
+        }
 
         // Check if the login is for admin
         if (username.equals(ADMIN_USERNAME) && password.equals(ADMIN_PASSWORD)) {
             loadAdminDashboard(event);
         } else if (validateCredentials(username, password)) {
-            try {
-                // Load the dashboard scene for users
-                Parent dashboardRoot = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
-                Scene dashboardScene = new Scene(dashboardRoot);
-
-                // Get the current stage and set the dashboard scene
-                Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                currentStage.setScene(dashboardScene);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            loadUserDashboard(event);
         } else {
             showAlert("Login Failed", "Invalid username or password.");
         }
@@ -59,18 +55,49 @@ public class LoginController {
             Scene adminScene = new Scene(adminRoot);
             Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             currentStage.setScene(adminScene);
+            currentStage.show();
         } catch (IOException e) {
             e.printStackTrace();
+            showAlert("Error", "Unable to load Admin Dashboard.");
         }
     }
 
+    // Load the User Dashboard
+    private void loadUserDashboard(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Dashboard.fxml"));
+            Parent userRoot = loader.load();
+
+            // Pass username to the next controller
+            DashboardController dashboardController = loader.getController();
+            dashboardController.setUsername(usernameField.getText().trim());
+
+            Scene userScene = new Scene(userRoot);
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.setScene(userScene);
+            currentStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Unable to load User Dashboard.");
+        }
+    }
+
+
     // Handle registration logic
     public void handleRegister(ActionEvent event) {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
 
-        // Check if the username already exists
-        if (isUsernameTaken(username)) {
+        // Check for empty fields
+        if (username.isEmpty() || password.isEmpty()) {
+            showAlert("Registration Failed", "Username and password cannot be empty.");
+            return;
+        }
+
+        // Prevent registration with the admin username
+        if (username.equals(ADMIN_USERNAME)) {
+            showAlert("Registration Failed", "The username '" + ADMIN_USERNAME + "' is reserved for admin use. Please choose a different username.");
+        } else if (isUsernameTaken(username)) {
             showAlert("Registration Failed", "Username already exists. Please choose a different username.");
         } else {
             // Save credentials using FileManager
@@ -85,7 +112,7 @@ public class LoginController {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] credentials = line.split(":");
-                if (credentials[0].equals(username) && credentials[1].equals(password)) {
+                if (credentials.length >= 2 && credentials[0].equals(username) && credentials[1].equals(password)) {
                     return true; // Found matching username and password
                 }
             }
@@ -101,7 +128,7 @@ public class LoginController {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] credentials = line.split(":");
-                if (credentials[0].equals(username)) {
+                if (credentials.length >= 1 && credentials[0].equals(username)) {
                     return true; // Username already exists
                 }
             }
