@@ -2,12 +2,19 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="10" alignment="CENTER" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+<VBox spacing="10" alignment="CENTER" prefWidth="400" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.example.demo.UpdateProfileController">
     <Label text="Update Profile" style="-fx-font-size: 18px;"/>
+
+    <!-- Instruction for changing username -->
+    <Label text="To change the username:"/>
     <TextField fx:id="currentUsernameField" promptText="Current Username"/>
     <TextField fx:id="newUsernameField" promptText="New Username (Optional)"/>
+
+    <!-- Instruction for changing password -->
+    <Label text="To change the password:"/>
     <PasswordField fx:id="newPasswordField" promptText="New Password"/>
     <PasswordField fx:id="confirmPasswordField" promptText="Confirm New Password"/>
+
     <Button fx:id="updateButton" text="Update Profile"/>
 </VBox>

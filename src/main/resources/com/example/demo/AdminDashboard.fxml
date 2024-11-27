@@ -19,8 +19,11 @@
         <!-- Remove Article Button -->
         <Button text="Remove Article" layoutX="210" layoutY="80" prefWidth="100" onAction="#handleRemoveArticle" />
 
+        <!-- Logout Button -->
+        <Button text="Logout" layoutX="160" layoutY="120" prefWidth="90" onAction="#handleLogout" />
+
         <!-- Add Article Section -->
-        <AnchorPane fx:id="articleAddSection" layoutX="50" layoutY="120" prefWidth="300" prefHeight="220">
+        <AnchorPane fx:id="articleAddSection" layoutX="50" layoutY="160" prefWidth="300" prefHeight="220">
             <!-- Category ComboBox -->
             <ComboBox fx:id="categoryComboBox" layoutX="50" layoutY="20" prefWidth="200" promptText="Select Category" />
 
@@ -32,21 +35,15 @@
 
             <!-- Submit Article Button -->
             <Button text="Submit Article" layoutX="60" layoutY="190" prefWidth="100" onAction="#handleSubmitArticle" />
-
-            <!-- Logout Button in Add Article Section -->
-            <Button text="Logout" layoutX="160" layoutY="190" prefWidth="90" onAction="#handleLogout" />
         </AnchorPane>
 
         <!-- Remove Article Section -->
-        <AnchorPane fx:id="articleRemoveSection" layoutX="50" layoutY="120" prefWidth="300" prefHeight="180">
+        <AnchorPane fx:id="articleRemoveSection" layoutX="50" layoutY="160" prefWidth="300" prefHeight="180">
             <!-- ComboBox for selecting an article to remove -->
             <ComboBox fx:id="articleToRemoveComboBox" layoutX="50" layoutY="20" prefWidth="200" promptText="Select Article to Remove" />
 
             <!-- Remove Article Button -->
             <Button text="Remove Article" layoutX="60" layoutY="60" prefWidth="100" onAction="#handleRemoveArticleSubmit" />
-
-            <!-- Logout Button in Remove Article Section -->
-            <Button text="Logout" layoutX="160" layoutY="60" prefWidth="90" onAction="#handleLogout" />
         </AnchorPane>
     </children>
 </AnchorPane>

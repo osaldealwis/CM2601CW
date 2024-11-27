@@ -173,6 +173,7 @@ public class RecommendationEngine {
     // Analyze user preferences from the CSV file
     private Map<String, List<String>> analyzeUserPreferences(String filePath) {
         Map<String, List<String>> categoryPreferences = new HashMap<>();
+
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
             List<String[]> records = reader.readAll();
 
@@ -182,9 +183,27 @@ public class RecommendationEngine {
                 String action = record[1];
                 String preference = record[2];
 
-                if (preference.equalsIgnoreCase("like") || action.equalsIgnoreCase("viewed")) {
+                // Only consider liked and viewed actions, and filter out dislikes
+                if ("like".equalsIgnoreCase(preference)) {
                     String category = detectArticleCategory(title);
-                    categoryPreferences.computeIfAbsent(category, k -> new ArrayList<>()).add(title);
+                    categoryPreferences.computeIfAbsent(category, k -> new ArrayList<>()).add(title); // Add liked articles
+                }
+            }
+
+            // Second pass to add viewed articles, but only if there are no liked articles in that category
+            for (String[] record : records) {
+                if (record[0].equalsIgnoreCase("Title")) continue; // Skip header
+                String title = record[0];
+                String action = record[1];
+                String preference = record[2];
+
+                // Only add viewed articles if no liked articles have been added for that category
+                if ("viewed".equalsIgnoreCase(action) && !"like".equalsIgnoreCase(preference)) {
+                    String category = detectArticleCategory(title);
+                    // Only add if this category hasn't already received liked articles
+                    if (!categoryPreferences.containsKey(category) || categoryPreferences.get(category).isEmpty()) {
+                        categoryPreferences.computeIfAbsent(category, k -> new ArrayList<>()).add(title);
+                    }
                 }
             }
         } catch (IOException | CsvException e) {
@@ -192,6 +211,7 @@ public class RecommendationEngine {
         }
         return categoryPreferences;
     }
+
 
     // Detect category based on article title
     private String detectArticleCategory(String title) {
