@@ -25,6 +25,8 @@ public class RecommendationsController {
         RecommendationEngine recommendationEngine = new RecommendationEngine();
         List<String> recommendedArticles = recommendationEngine.getRecommendationsForUser(loggedInUser);
 
+        recommendationsVBox.getChildren().clear();
+
         if (recommendedArticles.isEmpty()) {
             recommendationsVBox.getChildren().add(new Button("No recommendations available."));
         } else {
@@ -37,7 +39,6 @@ public class RecommendationsController {
     }
 
     private void openArticle(String articleTitle) {
-        // Logic to open and display the article
         System.out.println("Opening article: " + articleTitle);
     }
 
@@ -46,3 +47,4 @@ public class RecommendationsController {
         recommendationsVBox.getScene().getWindow().hide();
     }
 }
+
