@@ -1,0 +1,104 @@
+package com.example.demo;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class RecommendationEngine {
+
+    private static final String DATA_FOLDER = "data";
+
+    // Get recommendations for a user based on preferences
+    public List<String> getRecommendationsForUser(String username) {
+        String preferencesFilePath = DATA_FOLDER + "/preferences_" + username + ".csv";
+
+        // Load user preferences
+        Map<String, List<String>> categoryPreferences = analyzeUserPreferences(preferencesFilePath);
+
+        // Find the category with the highest "liked" and "viewed" counts
+        String preferredCategory = categoryPreferences.entrySet().stream()
+                .max(Comparator.comparingInt(entry -> entry.getValue().size()))
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        if (preferredCategory == null) {
+            System.out.println("No preferences found for user: " + username);
+            return Collections.emptyList();
+        }
+
+        // Fetch articles from the preferred category, excluding already viewed/disliked
+        return fetchArticlesFromCategory(preferredCategory, categoryPreferences.get(preferredCategory));
+    }
+
+    // Analyze user preferences from the CSV file
+    private Map<String, List<String>> analyzeUserPreferences(String filePath) {
+        Map<String, List<String>> categoryPreferences = new HashMap<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+
+            for (String[] record : records) {
+                if (record[0].equalsIgnoreCase("Title")) continue; // Skip header
+                String title = record[0];
+                String action = record[1];
+                String preference = record[2];
+
+                if (preference.equalsIgnoreCase("like") || action.equalsIgnoreCase("viewed")) {
+                    String category = detectArticleCategory(title);
+                    categoryPreferences.computeIfAbsent(category, k -> new ArrayList<>()).add(title);
+                }
+            }
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
+        }
+        return categoryPreferences;
+    }
+
+    // Detect category based on article title
+    private String detectArticleCategory(String title) {
+        // Match article titles to category files
+        File folder = new File(DATA_FOLDER);
+        File[] files = folder.listFiles((dir, name) -> name.startsWith("Articles_") && name.endsWith(".txt"));
+
+        if (files != null) {
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("Title:") && line.substring(7).trim().equalsIgnoreCase(title)) {
+                            return file.getName().replace("Articles_", "").replace(".txt", "");
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return "Unknown";
+    }
+
+    // Fetch articles from a specific category excluding already interacted titles
+    private List<String> fetchArticlesFromCategory(String category, List<String> excludeTitles) {
+        List<String> recommendations = new ArrayList<>();
+        String categoryFilePath = DATA_FOLDER + "/Articles_" + category + ".txt";
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(categoryFilePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("Title:")) {
+                    String title = line.substring(7).trim();
+                    if (!excludeTitles.contains(title)) {
+                        recommendations.add(title);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return recommendations;
+    }
+}
+
