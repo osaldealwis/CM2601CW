@@ -67,9 +67,15 @@ public class DashboardController {
             recommendationsController.setUsername(loggedInUser);
             recommendationsController.loadRecommendations(); // Load recommendations for the logged-in user
 
+            // Create the stage and set the scene with specified dimensions
             Stage recommendationsStage = new Stage();
             recommendationsStage.setTitle("Recommended Articles");
-            recommendationsStage.setScene(new Scene(root));
+            recommendationsStage.setScene(new Scene(root, 600, 300)); // Adjust width and height here
+
+            // Optionally, set minimum size for the window
+            recommendationsStage.setMinWidth(600);
+            recommendationsStage.setMinHeight(300);
+
             recommendationsStage.show();
         } catch (IOException e) {
             e.printStackTrace();

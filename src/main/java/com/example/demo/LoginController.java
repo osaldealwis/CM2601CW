@@ -72,15 +72,24 @@ public class LoginController {
             DashboardController dashboardController = loader.getController();
             dashboardController.setUsername(usernameField.getText().trim());
 
-            Scene userScene = new Scene(userRoot);
+            // Set scene with specified dimensions
+            Scene userScene = new Scene(userRoot, 400, 300); // Adjust width and height here
+
+            // Get the current stage and update its properties
             Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             currentStage.setScene(userScene);
+
+            // Optionally, set minimum size or other properties for the stage
+            currentStage.setMinWidth(400);
+            currentStage.setMinHeight(300);
+
             currentStage.show();
         } catch (IOException e) {
             e.printStackTrace();
             showAlert("Error", "Unable to load User Dashboard.");
         }
     }
+
 
 
     // Handle registration logic

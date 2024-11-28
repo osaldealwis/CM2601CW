@@ -65,13 +65,21 @@ public class RecommendationEngine {
     public void openArticleWindow(String title) {
         Stage newStage = new Stage();
         VBox vbox = new VBox();
+        vbox.setSpacing(10); // Add some spacing between elements
+
+        // Create a heading label for the article title
+        javafx.scene.control.Label titleLabel = new javafx.scene.control.Label(title);
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Style for heading
+
+        // Fetch the article content and clean it by removing "Content:" if present
+        String rawContent = allArticles.getOrDefault(title, "Article content not found.");
+        String cleanedContent = rawContent.replaceFirst("(?i)Content:\\s*", ""); // Remove "Content:" prefix (case-insensitive)
+
+        // Create a TextArea for the article content
         TextArea articleContentArea = new TextArea();
         articleContentArea.setEditable(false);
         articleContentArea.setWrapText(true);
-
-        // Find article content by title
-        String articleContent = allArticles.getOrDefault(title, "Article content not found.");
-        articleContentArea.setText(articleContent);
+        articleContentArea.setText(cleanedContent); // Set the cleaned content
 
         // Log the article view
         saveArticleView(title);
@@ -84,12 +92,16 @@ public class RecommendationEngine {
         Button dislikeButton = new Button("Dislike Article 👎");
         dislikeButton.setOnAction(event -> savePreference(title, "dislike"));
 
-        vbox.getChildren().addAll(articleContentArea, likeButton, dislikeButton);
+        // Add all components to the VBox
+        vbox.getChildren().addAll(titleLabel, articleContentArea, likeButton, dislikeButton);
+
+        // Create and set the scene
         Scene scene = new Scene(vbox, 500, 400);
         newStage.setScene(scene);
-        newStage.setTitle(title);
+        newStage.setTitle(title); // Set the window title
         newStage.show();
     }
+
 
     private void saveArticleView(String articleTitle) {
         if (loggedInUser == null || loggedInUser.isEmpty()) {

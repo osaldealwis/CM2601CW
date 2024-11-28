@@ -90,13 +90,21 @@ public class ViewArticlesController {
     private void openArticleWindow(String title) {
         Stage newStage = new Stage();
         VBox vbox = new VBox();
+        vbox.setSpacing(10); // Add spacing between components
+
+        // Create a heading for the article title
+        javafx.scene.control.Label titleLabel = new javafx.scene.control.Label(title);
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Bold and larger font for the heading
+
+        // Create a TextArea for the article content
         TextArea articleContentArea = new TextArea();
         articleContentArea.setEditable(false);
         articleContentArea.setWrapText(true);
 
-        // Find article content by title
-        String articleContent = loadArticleContent(title);
-        articleContentArea.setText(articleContent);
+        // Load and clean the article content
+        String rawContent = loadArticleContent(title);
+        String cleanedContent = rawContent.replaceFirst("(?i)Content:\\s*", ""); // Remove "Content:" prefix if present
+        articleContentArea.setText(cleanedContent);
 
         // Log the article view
         saveArticleView(title);
@@ -109,12 +117,16 @@ public class ViewArticlesController {
         Button dislikeButton = new Button("Dislike Article 👎");
         dislikeButton.setOnAction(event -> savePreference(title, "dislike"));
 
-        vbox.getChildren().addAll(articleContentArea, likeButton, dislikeButton);
+        // Add components to the VBox
+        vbox.getChildren().addAll(titleLabel, articleContentArea, likeButton, dislikeButton);
+
+        // Set up the scene and display the new stage
         Scene scene = new Scene(vbox, 500, 400);
         newStage.setScene(scene);
-        newStage.setTitle(title);
+        newStage.setTitle(title); // Set the window title
         newStage.show();
     }
+
 
     private void saveArticleView(String articleTitle) {
         if (loggedInUser == null || loggedInUser.isEmpty()) {
@@ -199,14 +211,19 @@ public class ViewArticlesController {
                     boolean articleFound = false;
 
                     while ((line = reader.readLine()) != null) {
+                        // Check if the line matches the article title
                         if (line.startsWith("Title:") && line.substring(7).trim().equals(title)) {
-                            articleFound = true;
+                            articleFound = true; // Mark the start of the desired article
+                            continue; // Skip the title line
                         }
+
+                        // Add the content lines after the title
                         if (articleFound) {
+                            // Stop when reaching the delimiter
+                            if (line.startsWith("=====================================")) {
+                                break;
+                            }
                             content.append(line).append("\n");
-                        }
-                        if (line.startsWith("=====================================") && articleFound) {
-                            break;
                         }
                     }
                 } catch (IOException e) {
@@ -215,8 +232,9 @@ public class ViewArticlesController {
             }
         }
 
-        return content.toString();
+        return content.toString().trim(); // Trim any extra newlines
     }
+
 
     // Show alerts
     private void showAlert(String title, String message) {
